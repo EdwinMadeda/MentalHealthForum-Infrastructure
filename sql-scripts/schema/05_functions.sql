@@ -416,3 +416,53 @@ ORDER BY
     c.header ASC;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+
+-- ---------------------------------------------------------------------
+-- 15.21 category_is_visible -  Determine if a user can see a category based on
+-- --                           participation_requirements.viewAccess.
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION category_is_visible(
+    p_category_id UUID,
+    p_viewer_id UUID,
+    p_is_admin BOOLEAN,
+    p_is_moderator_or_admin BOOLEAN,
+    p_is_verified BOOLEAN
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+v_view_access TEXT;
+    v_is_active BOOLEAN;
+BEGIN
+    -- Fetch the category's active status and viewAccess value (or default to 'MEMBERS_ONLY')
+SELECT c.is_active, COALESCE(c.participation_requirements ->> 'viewAccess', 'MEMBERS_ONLY')
+INTO v_is_active, v_view_access
+FROM forum_categories c
+WHERE c.id = p_category_id;
+
+-- If category doesn't exist or is inactive, it is not visible
+IF NOT FOUND THEN
+        RETURN FALSE;
+END IF;
+
+    -- Admin bypass: admins can see ANY category (active or inactive)
+    IF p_is_admin = TRUE THEN
+        RETURN TRUE;
+END IF;
+
+    -- For non-admins: category must be active
+    IF v_is_active = FALSE THEN
+        RETURN FALSE;
+END IF;
+
+    -- Apply visibility rules
+RETURN (
+    v_view_access = 'PUBLIC'
+        OR (v_view_access = 'MEMBERS_ONLY' AND p_viewer_id IS NOT NULL)
+        OR (v_view_access = 'VERIFIED_ONLY' AND p_is_verified = TRUE)
+        OR (v_view_access = 'MODERATORS_ONLY' AND p_is_moderator_or_admin = TRUE)
+        OR (v_view_access = 'ADMINS_ONLY' AND p_is_admin = TRUE)
+    );
+
+END;
+$$ LANGUAGE plpgsql STABLE;
