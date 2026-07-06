@@ -429,40 +429,61 @@ CREATE OR REPLACE FUNCTION category_is_visible(
     p_is_moderator_or_admin BOOLEAN,
     p_is_verified BOOLEAN
 )
-RETURNS BOOLEAN AS $$
+    RETURNS BOOLEAN AS $$
 DECLARE
-v_view_access TEXT;
-    v_is_active BOOLEAN;
+v_exists BOOLEAN;
+    v_visible BOOLEAN;
 BEGIN
-    -- Fetch the category's active status and viewAccess value (or default to 'MEMBERS_ONLY')
-SELECT c.is_active, COALESCE(c.participation_requirements ->> 'viewAccess', 'MEMBERS_ONLY')
-INTO v_is_active, v_view_access
-FROM forum_categories c
-WHERE c.id = p_category_id;
 
--- If category doesn't exist or is inactive, it is not visible
-IF NOT FOUND THEN
+    -- Check if category actually exits
+    -- Non-existent categories are Never visible to anyone
+SELECT EXISTS(SELECT 1 FROM forum_categories WHERE id = p_category_id) INTO v_exists;
+IF NOT v_exists THEN
         RETURN FALSE;
 END IF;
 
-    -- Admin bypass: admins can see ANY category (active or inactive)
+    -- Admin bypass: admins see any category (active or inactive)
     IF p_is_admin = TRUE THEN
         RETURN TRUE;
 END IF;
 
-    -- For non-admins: category must be active
-    IF v_is_active = FALSE THEN
-        RETURN FALSE;
-END IF;
+    -- Recursive CTE to check all ancestors (including self) for non-admins
+WITH RECURSIVE category_ancestors AS (
+    -- Base case: start with the given category
+    SELECT
+        id,
+        is_active,
+        COALESCE(participation_requirements ->> 'viewAccess', 'MEMBERS_ONLY') AS view_access,
+        parent_category_id
+    FROM forum_categories
+    WHERE id = p_category_id
 
-    -- Apply visibility rules
-RETURN (
-    v_view_access = 'PUBLIC'
-        OR (v_view_access = 'MEMBERS_ONLY' AND p_viewer_id IS NOT NULL)
-        OR (v_view_access = 'VERIFIED_ONLY' AND p_is_verified = TRUE)
-        OR (v_view_access = 'MODERATORS_ONLY' AND p_is_moderator_or_admin = TRUE)
-        OR (v_view_access = 'ADMINS_ONLY' AND p_is_admin = TRUE)
-    );
+    UNION ALL
 
+    -- Recursive case: climb up to the parent
+    SELECT
+        c.id,
+        c.is_active,
+        COALESCE(c.participation_requirements ->> 'viewAccess', 'MEMBERS_ONLY') AS view_access,
+        c.parent_category_id
+    FROM forum_categories c
+             INNER JOIN category_ancestors a ON c.id = a.parent_category_id
+)
+-- Check if ALL ancestors (including self) are visible
+SELECT bool_and(
+               is_active = TRUE
+                   AND (
+                   view_access = 'PUBLIC'
+                       OR (view_access = 'MEMBERS_ONLY' AND p_viewer_id IS NOT NULL)
+                       OR (view_access = 'VERIFIED_ONLY' AND p_is_verified = TRUE)
+                       OR (view_access = 'MODERATORS_ONLY' AND p_is_moderator_or_admin = TRUE)
+                       OR (view_access = 'ADMINS_ONLY' AND p_is_admin = TRUE)
+                   )
+       )
+INTO v_visible
+FROM category_ancestors;
+
+-- If no rows found (category doesn't exist), return FALSE
+RETURN COALESCE(v_visible, FALSE);
 END;
 $$ LANGUAGE plpgsql STABLE;
