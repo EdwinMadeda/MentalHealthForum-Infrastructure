@@ -487,3 +487,91 @@ FROM category_ancestors;
 RETURN COALESCE(v_visible, FALSE);
 END;
 $$ LANGUAGE plpgsql STABLE;
+
+
+-- ---------------------------------------------------------------------
+-- 15.22 profile_is_visible -  Determine if a user can see another's profile based on
+-- --                           profile visibility, roles, groups (must be active).
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION profile_is_visible(
+    p_target_user_id UUID,
+    p_viewer_id UUID,
+    p_is_admin BOOLEAN,
+    p_is_moderator_or_admin BOOLEAN
+)
+RETURNS BOOLEAN AS $$
+DECLARE
+v_visibility TEXT;
+    v_target_roles TEXT[];
+    v_target_groups TEXT[];
+BEGIN
+    -- Admin/Moderator bypass (they see everything) (BELT 1)
+    IF p_is_admin = TRUE OR p_is_moderator_or_admin = TRUE THEN
+        RETURN TRUE;
+END IF;
+
+    -- Self always visible
+    IF p_target_user_id = p_viewer_id THEN
+        RETURN TRUE;
+END IF;
+
+    -- Fetch the target user's profile visibility, roles, groups (must be active)
+SELECT
+    profile_visibility,
+    roles,
+    groups
+INTO
+    v_visibility,
+    v_target_roles,
+    v_target_groups
+FROM app_users
+WHERE keycloak_id = p_target_user_id
+  AND is_active = TRUE
+  AND account_deletion_requested_at IS NULL;
+
+-- If target user doesn't exist or is inactive/deleted
+IF NOT FOUND THEN
+        RETURN FALSE;
+END IF;
+
+    -- If target is Admin/moderator visible to everyone (BELT 2 / SUSPENDERS - global override)
+    IF (v_target_roles && ARRAY['admin', 'moderator'])
+        OR (v_target_groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer']) THEN
+        RETURN TRUE;
+END IF;
+
+
+    -- Apply visibility rules (with COALESCE to guarantee FALSE on any NULL ambiguity)
+RETURN COALESCE(
+        (
+            (v_visibility = 'MEMBERS_ONLY' AND p_viewer_id IS NOT NULL)
+                OR (v_visibility = 'CONNECTED_ONLY' AND p_viewer_id IS NOT NULL AND EXISTS (
+                SELECT 1
+                FROM user_connections uc
+                WHERE uc.status = 'ACCEPTED'
+                  AND (
+                    (uc.user_1 = p_viewer_id AND uc.user_2 = p_target_user_id)
+                        OR (uc.user_1 = p_target_user_id AND uc.user_2 = p_viewer_id)
+                    ))
+                )
+                OR (v_visibility = 'PRIVATE' AND (
+                -- Self already caught above, but keeping for completeness
+                p_target_user_id = p_viewer_id
+                    OR p_is_admin = TRUE
+                    OR p_is_moderator_or_admin = TRUE
+                    OR (v_target_roles && ARRAY['admin', 'moderator'])
+                    OR (v_target_groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer'])
+                    OR EXISTS (
+                    SELECT 1
+                    FROM user_connections uc
+                    WHERE uc.status = 'ACCEPTED'
+                      AND (
+                        (uc.user_1 = p_viewer_id AND uc.user_2 = p_target_user_id)
+                            OR (uc.user_1 = p_target_user_id AND uc.user_2 = p_viewer_id)
+                        ))
+                )
+                )
+            )
+    , FALSE);
+END;
+$$ LANGUAGE plpgsql STABLE;
