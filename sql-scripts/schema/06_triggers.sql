@@ -124,3 +124,61 @@ CREATE TRIGGER trigger_notify_on_reply
     AFTER INSERT ON forum_posts
     FOR EACH ROW
     EXECUTE FUNCTION notify_on_reply();
+
+-- ---------------------------------------------------------------------
+-- 16.16 Prevent admin deactivation
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION prevent_admin_deactivation()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Check if the user is an admin or moderator (OLD) or WILL BE an admin (NEW)
+    IF (OLD.roles && ARRAY['admin', 'moderator'])
+        OR (OLD.groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer'])
+
+        OR (NEW.roles && ARRAY['admin', 'moderator'])
+        OR (NEW.groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer'])
+    THEN
+
+        -- Prevent deactivation or deletion
+        IF NEW.is_active = FALSE THEN
+            RAISE EXCEPTION 'Cannot deactivate an admin or moderator user (ID: %)', NEW.keycloak_id;
+END IF;
+
+        IF NEW.account_deletion_requested_at IS NOT NULL THEN
+            RAISE EXCEPTION 'Cannot mark an admin or moderator user for deletion (ID: %)', NEW.keycloak_id;
+END IF;
+
+END IF;
+
+RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Attach the trigger to INSERT and UPDATE events
+CREATE OR REPLACE TRIGGER trg_prevent_admin_deactivation
+BEFORE INSERT OR UPDATE ON app_users
+FOR EACH ROW
+EXECUTE FUNCTION prevent_admin_deactivation();
+
+-- ---------------------------------------------------------------------
+-- 16.17 Prevent admin deletion
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION prevent_admin_deletion()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- Check if the user being deleted is an admin or moderator
+    IF (OLD.roles && ARRAY['admin', 'moderator'])
+        OR (OLD.groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer'])
+
+    THEN
+        RAISE EXCEPTION 'Cannot delete an admin or moderator user (ID: %)', OLD.keycloak_id;
+
+END IF;
+RETURN OLD; -- Allowed
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE OR REPLACE TRIGGER trg_prevent_admin_deletion
+BEFORE DELETE ON app_users
+FOR EACH ROW
+EXECUTE FUNCTION prevent_admin_deletion();
