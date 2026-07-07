@@ -6,7 +6,7 @@
 -- 3.1 app_users - Main user profile table
 -- ---------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS app_users (
-                                         id                            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    id                            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     keycloak_id                   UUID NOT NULL,
     email                         VARCHAR(255) NOT NULL,
     username                      VARCHAR(255) NOT NULL,
