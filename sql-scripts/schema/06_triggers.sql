@@ -134,9 +134,11 @@ BEGIN
     -- Check if the user is an admin or moderator (OLD) or WILL BE an admin (NEW)
     IF (OLD.roles && ARRAY['admin', 'moderator'])
         OR (OLD.groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer'])
+        OR (OLD.is_super_admin = TRUE)
 
         OR (NEW.roles && ARRAY['admin', 'moderator'])
         OR (NEW.groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer'])
+        OR (NEW.is_super_admin = TRUE)
     THEN
 
         -- Prevent deactivation or deletion
