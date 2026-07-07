@@ -26,6 +26,9 @@ CREATE INDEX IF NOT EXISTS idx_app_users_search ON app_users
     to_tsvector('public.simple_unaccent', COALESCE(bio, '')))
     );
 
+-- This ensures only ONE row can ever have is_super_admin = TRUE
+CREATE UNIQUE INDEX idx_unique_super_admin ON app_users (is_super_admin) WHERE is_super_admin = TRUE;
+
 -- ---------------------------------------------------------------------
 -- admin_invitations indexes
 -- ---------------------------------------------------------------------

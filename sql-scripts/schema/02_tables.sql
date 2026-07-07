@@ -45,7 +45,8 @@ CREATE TABLE IF NOT EXISTS app_users (
     last_active_at                TIMESTAMP,
     last_posted_at                TIMESTAMP,
     is_active                     BOOLEAN DEFAULT TRUE,
-    account_deletion_requested_at TIMESTAMP DEFAULT NULL
+    account_deletion_requested_at TIMESTAMP DEFAULT NULL,
+    is_super_admin                BOOLEAN DEFAULT FALSE
     );
 
 COMMENT ON TABLE app_users IS 'Main user profile table - syncs with Keycloak';
