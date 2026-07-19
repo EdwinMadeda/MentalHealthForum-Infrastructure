@@ -12,6 +12,8 @@ CREATE INDEX IF NOT EXISTS idx_app_users_date_joined ON app_users (date_joined D
 CREATE INDEX IF NOT EXISTS idx_app_users_posts_count ON app_users (posts_count DESC);
 CREATE INDEX IF NOT EXISTS idx_app_users_reputation ON app_users (reputation_score DESC);
 CREATE INDEX IF NOT EXISTS idx_app_users_active ON app_users (is_active, last_active_at DESC);
+CREATE INDEX IF NOT EXISTS idx_app_users_last_login ON app_users (last_login_at) WHERE is_active = TRUE;
+CREATE INDEX IF NOT EXISTS idx_app_users_last_active ON app_users (last_active_at) WHERE is_active = TRUE;
 CREATE INDEX IF NOT EXISTS idx_app_users_roles ON app_users USING gin (roles);
 CREATE INDEX IF NOT EXISTS idx_app_users_groups ON app_users USING gin (groups);
 

@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS app_users (
     last_active_at                TIMESTAMP,
     last_posted_at                TIMESTAMP,
     is_active                     BOOLEAN DEFAULT TRUE,
+    last_login_at                 TIMESTAMP DEFAULT NULL,
     account_deletion_requested_at TIMESTAMP DEFAULT NULL,
     is_super_admin                BOOLEAN DEFAULT FALSE
     );
