@@ -184,3 +184,42 @@ CREATE OR REPLACE TRIGGER trg_prevent_admin_deletion
 BEFORE DELETE ON app_users
 FOR EACH ROW
 EXECUTE FUNCTION prevent_admin_deletion();
+
+
+-- ---------------------------------------------------------------------
+-- 16.18 Check user keycloak uniqueness
+-- ---------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION check_user_keycloak_uniqueness()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- When inserting into app_users, check if the user is in admin_invitations
+    IF TG_TABLE_NAME = 'app_users' AND TG_OP = 'INSERT' THEN
+        IF EXISTS (SELECT 1 FROM admin_invitations WHERE keycloak_id = NEW.keycloak_id) THEN
+            RAISE EXCEPTION 'User % already exists in admin_invitations (lobby)', NEW.keycloak_id;
+        END IF;
+    END IF;
+
+    -- When inserting into admin_invitations, check if the user is in app_users
+    IF TG_TABLE_NAME = 'admin_invitations' AND TG_OP = 'INSERT' THEN
+        IF EXISTS (SELECT 1 FROM app_users WHERE keycloak_id = NEW.keycloak_id) THEN
+            RAISE EXCEPTION 'User % already exists in app_users', NEW.keycloak_id;
+        END IF;
+    END IF;
+
+    -- Prevent ANY change to keycloak_id
+    IF TG_OP = 'UPDATE' AND NEW.keycloak_id != OLD.keycloak_id THEN
+        RAISE EXCEPTION 'Cannot change keycloak_id - it is immutable';
+    END IF;
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Attach the trigger to both tables
+CREATE OR REPLACE TRIGGER enforce_unique_keycloak_app_users
+BEFORE INSERT OR UPDATE ON app_users
+FOR EACH ROW EXECUTE FUNCTION check_user_keycloak_uniqueness();
+
+CREATE OR REPLACE TRIGGER enforce_unique_keycloak_admin_invitations
+BEFORE INSERT OR UPDATE ON admin_invitations
+FOR EACH ROW EXECUTE FUNCTION check_user_keycloak_uniqueness();
