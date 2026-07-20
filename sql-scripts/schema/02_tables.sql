@@ -15,8 +15,8 @@ CREATE TABLE IF NOT EXISTS app_users (
     roles                         TEXT[],
     groups                        TEXT[],
     is_enabled                    BOOLEAN,
-    last_synced_at                TIMESTAMP,
-    date_joined                   TIMESTAMP NOT NULL,
+    last_synced_at                TIMESTAMP WITH TIME ZONE,
+    date_joined                   TIMESTAMP WITH TIME ZONE NOT NULL,
     display_name                  VARCHAR(100),
     avatar_url                    TEXT,
     bio                           TEXT,
@@ -42,14 +42,16 @@ CREATE TABLE IF NOT EXISTS app_users (
                                          }'::jsonb,
     posts_count                   INTEGER DEFAULT 0,
     reputation_score              NUMERIC(10,2) DEFAULT 0.0,
-    last_active_at                TIMESTAMP DEFAULT NULL,
-    last_active_updated_at        TIMESTAMP DEFAULT NULL,
-    last_posted_at                TIMESTAMP DEFAULT NULL,
-    is_active                     BOOLEAN DEFAULT TRUE,
-    last_login_at                 TIMESTAMP DEFAULT NULL,
-    account_deletion_requested_at TIMESTAMP DEFAULT NULL,
-    is_super_admin                BOOLEAN DEFAULT FALSE
-    );
+    last_active_at                TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    last_active_updated_at        TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    last_posted_at                TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    last_login_at                 TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    is_super_admin                BOOLEAN DEFAULT FALSE,
+    account_status                account_status NOT NULL DEFAULT 'ACTIVE',
+    deletion_requested_at         TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    deletion_scheduled_at         TIMESTAMP WITH TIME ZONE DEFAULT NULL,
+    purged_at                     TIMESTAMP WITH TIME ZONE DEFAULT NULL
+);
 
 COMMENT ON TABLE app_users IS 'Main user profile table - syncs with Keycloak';
 COMMENT ON COLUMN app_users.keycloak_id IS 'The unique Keycloak UUID (sub claim)';

@@ -526,8 +526,7 @@ INTO
     v_target_groups
 FROM app_users
 WHERE keycloak_id = p_target_user_id
-  AND is_active = TRUE
-  AND account_deletion_requested_at IS NULL;
+    AND account_status = 'ACTIVE';
 
 -- If target user doesn't exist or is inactive/deleted
 IF NOT FOUND THEN

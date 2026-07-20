@@ -141,16 +141,17 @@ BEGIN
         OR (NEW.is_super_admin = TRUE)
     THEN
 
-        -- Prevent deactivation or deletion
-        IF NEW.is_active = FALSE THEN
-            RAISE EXCEPTION 'Cannot deactivate an admin or moderator user (ID: %)', NEW.keycloak_id;
-END IF;
+        -- Prevent deactivation (changing account_status to anything other than ACTIVE)
+        IF NEW.account_status != 'ACTIVE' AND NEW.account_status != OLD.account_status THEN
+            RAISE EXCEPTION 'Cannot deactivate an admin or moderator user...';
+        END IF;
 
-        IF NEW.account_deletion_requested_at IS NOT NULL THEN
-            RAISE EXCEPTION 'Cannot mark an admin or moderator user for deletion (ID: %)', NEW.keycloak_id;
-END IF;
+        -- Prevent deletion request
+        IF NEW.deletion_requested_at IS NOT NULL AND OLD.deletion_requested_at IS NULL THEN
+            RAISE EXCEPTION 'Cannot mark an admin or moderator user for deletion...';
+        END IF;
 
-END IF;
+    END IF;
 
 RETURN NEW;
 END;

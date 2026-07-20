@@ -11,10 +11,16 @@ CREATE INDEX IF NOT EXISTS idx_app_users_display_name_sort ON app_users (COALESC
 CREATE INDEX IF NOT EXISTS idx_app_users_date_joined ON app_users (date_joined DESC);
 CREATE INDEX IF NOT EXISTS idx_app_users_posts_count ON app_users (posts_count DESC);
 CREATE INDEX IF NOT EXISTS idx_app_users_reputation ON app_users (reputation_score DESC);
-CREATE INDEX IF NOT EXISTS idx_app_users_active ON app_users (is_active, last_active_at DESC);
-CREATE INDEX IF NOT EXISTS idx_active_users ON app_users (last_active_at) WHERE is_active = TRUE;
-CREATE INDEX IF NOT EXISTS idx_app_users_last_login ON app_users (last_login_at) WHERE is_active = TRUE;
-CREATE INDEX IF NOT EXISTS idx_app_users_last_active ON app_users (last_active_at) WHERE is_active = TRUE;
+
+-- Recreate indexes using account_status instead of is_active
+CREATE INDEX idx_active_users ON app_users (last_active_at) WHERE account_status = 'ACTIVE';
+CREATE INDEX idx_app_users_last_active ON app_users (last_active_at) WHERE account_status = 'ACTIVE';
+CREATE INDEX idx_app_users_last_login ON app_users (last_login_at) WHERE account_status = 'ACTIVE';
+CREATE INDEX idx_app_users_account_status ON app_users (account_status, last_active_at DESC);
+
+-- Additional index for scheduled deletion job
+CREATE INDEX idx_app_users_deletion_scheduled ON app_users (deletion_scheduled_at) WHERE account_status = 'PENDING_DELETION';
+
 CREATE INDEX IF NOT EXISTS idx_app_users_roles ON app_users USING gin (roles);
 CREATE INDEX IF NOT EXISTS idx_app_users_groups ON app_users USING gin (groups);
 
