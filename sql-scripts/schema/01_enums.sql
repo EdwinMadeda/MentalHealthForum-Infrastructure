@@ -197,3 +197,9 @@ DO $$ BEGIN
 CREATE TYPE warning_type_enum AS ENUM ('INFORMAL', 'FORMAL', 'FINAL', 'POLICY_VIOLATION');
 END IF;
 END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'account_status_enum') THEN
+CREATE TYPE profile_visibility_enum AS ENUM ('ACTIVE', 'PENDING_DELETION', 'PURGED');
+END IF;
+END $$;
