@@ -200,6 +200,6 @@ END $$;
 
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'account_status_enum') THEN
-CREATE TYPE profile_visibility_enum AS ENUM ('ACTIVE', 'PENDING_DELETION', 'PURGED');
+CREATE TYPE account_status_enum AS ENUM ('ACTIVE', 'PENDING_DELETION', 'PURGED');
 END IF;
 END $$;
