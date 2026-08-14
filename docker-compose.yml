@@ -131,6 +131,9 @@ services:
     container_name: mhf-novu-api
     ports:
       - "3000:3000"
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     environment:
     - NODE_ENV=local
     - MONGO_URL=mongodb://mhf-novu-mongodb:27017/novu-db
@@ -184,6 +187,9 @@ services:
   mhf-novu-worker:
     image: ghcr.io/novuhq/novu/worker:2.1.1
     container_name: mhf-novu-worker
+    dns:
+      - 8.8.8.8
+      - 1.1.1.1
     environment:
       - NODE_ENV=local
       - MONGO_URL=mongodb://mhf-novu-mongodb:27017/novu-db
