@@ -104,3 +104,7 @@ sql-scripts/*.db
 # === Keep These Tracked ===
 !docker-compose.yml
 !README.md
+
+# === Local Database Migration Dumps ===
+migration/
+
