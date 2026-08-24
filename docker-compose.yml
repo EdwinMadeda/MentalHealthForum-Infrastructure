@@ -118,14 +118,29 @@ services:
       - ./databases/mhf-novu-mongodb:/data/db
     restart: always
 
-  # 5.2 Redis for Novu
+  # 5.2 Mongo Express for MongoDB
+  mhf-novu-mongo-express:
+    image: mongo-express
+    container_name: mhf-novu-mongo-express
+    environment:
+      ME_CONFIG_MONGODB_URL: mongodb://mhf-novu-mongodb:27017/novu-db
+      ME_CONFIG_BASICAUTH_ENABLED: "true"
+      ME_CONFIG_BASICAUTH_USERNAME: admin@mhf.co
+      ME_CONFIG_BASICAUTH_PASSWORD: admin123
+    ports:
+      - "127.0.0.1:8091:8081"
+    depends_on:
+      - mhf-novu-mongodb
+    restart: unless-stopped
+
+  # 5.3 Redis for Novu
   mhf-novu-redis:
     image: redis:alpine
     container_name: mhf-novu-redis
     restart: always
 
     # --- API SERVICE ---
-  # 5.3 Novu API Service
+  # 5.4 Novu API Service
   mhf-novu-api:
     image: ghcr.io/novuhq/novu/api:2.1.1
     container_name: mhf-novu-api
@@ -151,7 +166,7 @@ services:
     restart: always
 
   # --- WEB DASHBOARD (The Entry Point) ---
-  # 5.4 Novu Dashboard
+  # 5.5 Novu Dashboard
   mhf-novu-dashboard:
     image: ghcr.io/novuhq/novu/web:2.1.1
     container_name: mhf-novu-dashboard
