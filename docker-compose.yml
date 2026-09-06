@@ -31,6 +31,10 @@ services:
         condition: service_healthy
 
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 450M  # The lowest safe bound for Keycloak dev mode
 
   # ----------------------------------------------------
   # 2. KEYCLOAK POSTGRES DATABASE
@@ -55,6 +59,10 @@ services:
       retries: 5
 
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 100M
 
   # ----------------------------------------------------
   # 3. FORUM POSTGRES DATABASE (For Spring Boot Data)
@@ -80,6 +88,10 @@ services:
       retries: 5
 
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 150M
 
   # ----------------------------------------------------
   # 4. PGADMIN
@@ -103,6 +115,10 @@ services:
       retries: 5
 
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 120M
 
   # ----------------------------------------------------
   # 5. NOVU LEAN STACK
@@ -117,6 +133,10 @@ services:
     volumes:
       - ./databases/mhf-novu-mongodb:/data/db
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 200M
 
   # 5.2 Mongo Express for MongoDB
   mhf-novu-mongo-express:
@@ -132,12 +152,20 @@ services:
     depends_on:
       - mhf-novu-mongodb
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 50M
 
   # 5.3 Redis for Novu
   mhf-novu-redis:
     image: redis:alpine
     container_name: mhf-novu-redis
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 40M
 
     # --- API SERVICE ---
   # 5.4 Novu API Service
@@ -150,20 +178,24 @@ services:
       - 8.8.8.8
       - 1.1.1.1
     environment:
-    - NODE_ENV=local
-    - MONGO_URL=mongodb://mhf-novu-mongodb:27017/novu-db
-    - REDIS_URL=redis://mhf-novu-redis:6379
-    # ADD THESE TWO LINES BELOW
-    - REDIS_HOST=mhf-novu-redis
-    - REDIS_PORT=6379
-    - JWT_SECRET=mhf_dev_secret_123
-    - STORE_ENCRYPTION_KEY=12345678901234567890123456789012
-    - FRONT_BASE_URL=http://localhost:4200
-     # Ensure your Next.js origin is allowed
-    - CORS_ALLOWED_ORIGINS=http://localhost:3001,http://localhost:3000,http://localhost:4200
+      - NODE_ENV=local
+      - MONGO_URL=mongodb://mhf-novu-mongodb:27017/novu-db
+      - REDIS_URL=redis://mhf-novu-redis:6379
+      # ADD THESE TWO LINES BELOW
+      - REDIS_HOST=mhf-novu-redis
+      - REDIS_PORT=6379
+      - JWT_SECRET=mhf_dev_secret_123
+      - STORE_ENCRYPTION_KEY=12345678901234567890123456789012
+      - FRONT_BASE_URL=http://localhost:4200
+      # Ensure your Next.js origin is allowed
+      - CORS_ALLOWED_ORIGINS=http://localhost:3001,http://localhost:3000,http://localhost:4200
       # We add every possible variation. Note the lack of spaces after commas.
-#    - CORS_ALLOWED_HEADERS=Content-Type,Authorization,novu-api-version,x-novu-client-version,sentry-trace,baggage
+    #    - CORS_ALLOWED_HEADERS=Content-Type,Authorization,novu-api-version,x-novu-client-version,sentry-trace,baggage
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 250M
 
   # --- WEB DASHBOARD (The Entry Point) ---
   # 5.5 Novu Dashboard
@@ -176,6 +208,10 @@ services:
       - REACT_APP_API_URL=http://localhost:3000
       - REACT_APP_WS_URL=http://localhost:3002
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 100M
 
     # --- WEBSOCKET SERVICE ---
   # 5.6 Novu WebSocket Service
@@ -196,6 +232,10 @@ services:
       - SOCKET_IO_PROTOCOL_VERSION=4
       - CORS_ALLOWED_ORIGINS=http://localhost:3001,http://localhost:4200,http://localhost:3000,http://127.0.0.1:3001
     restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 120M
 
   # --- WORKER SERVICE ---
   # 5.7 Novu Worker Service (Optional - for background jobs)
@@ -216,7 +256,10 @@ services:
       - JWT_SECRET=mhf_dev_secret_123
       - STORE_ENCRYPTION_KEY=12345678901234567890123456789012
     restart: always
-
+    deploy:
+      resources:
+        limits:
+          memory: 200M
 
 # ----------------------------------------------------
 # NETWORK CONFIGURATION
@@ -225,12 +268,3 @@ networks:
   default:
     name: mhf-network
     driver: bridge
-
-
-
-
-
-
-
-
-
