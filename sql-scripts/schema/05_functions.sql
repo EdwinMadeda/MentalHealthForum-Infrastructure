@@ -501,47 +501,47 @@ CREATE OR REPLACE FUNCTION profile_is_visible(
 )
 RETURNS BOOLEAN AS $$
 DECLARE
-v_visibility TEXT;
+    v_visibility TEXT;
     v_target_roles TEXT[];
     v_target_groups TEXT[];
 BEGIN
     -- Admin/Moderator bypass (they see everything) (BELT 1)
     IF p_is_admin = TRUE OR p_is_moderator_or_admin = TRUE THEN
         RETURN TRUE;
-END IF;
+    END IF;
 
     -- Self always visible
     IF p_target_user_id = p_viewer_id THEN
         RETURN TRUE;
-END IF;
+    END IF;
 
     -- Fetch the target user's profile visibility, roles, groups (must be active)
-SELECT
-    profile_visibility,
-    roles,
-    groups
-INTO
-    v_visibility,
-    v_target_roles,
-    v_target_groups
-FROM app_users
-WHERE keycloak_id = p_target_user_id
-    AND account_status = 'ACTIVE';
+    SELECT
+        profile_visibility,
+        roles,
+        groups
+    INTO
+        v_visibility,
+        v_target_roles,
+        v_target_groups
+    FROM app_users
+    WHERE keycloak_id = p_target_user_id
+        AND account_status = 'ACTIVE';
 
--- If target user doesn't exist or is inactive/deleted
-IF NOT FOUND THEN
+    -- If target user doesn't exist or is inactive/deleted
+    IF NOT FOUND THEN
         RETURN FALSE;
-END IF;
+    END IF;
 
-    -- If target is Admin/moderator visible to everyone (BELT 2 / SUSPENDERS - global override)
+    -- If target is Admin/moderator/superadmin visible to everyone (BELT 2 / SUSPENDERS - global override)
+    -- UPDATED: Added /super_administrators to the groups check
     IF (v_target_roles && ARRAY['admin', 'moderator'])
-        OR (v_target_groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer']) THEN
+        OR (v_target_groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer', '/super_administrators']) THEN
         RETURN TRUE;
-END IF;
-
+    END IF;
 
     -- Apply visibility rules (with COALESCE to guarantee FALSE on any NULL ambiguity)
-RETURN COALESCE(
+    RETURN COALESCE(
         (
             (v_visibility = 'MEMBERS_ONLY' AND p_viewer_id IS NOT NULL)
                 OR (v_visibility = 'CONNECTED_ONLY' AND p_viewer_id IS NOT NULL AND EXISTS (
@@ -559,7 +559,7 @@ RETURN COALESCE(
                     OR p_is_admin = TRUE
                     OR p_is_moderator_or_admin = TRUE
                     OR (v_target_roles && ARRAY['admin', 'moderator'])
-                    OR (v_target_groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer'])
+                    OR (v_target_groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer', '/super_administrators'])
                     OR EXISTS (
                     SELECT 1
                     FROM user_connections uc
@@ -571,6 +571,6 @@ RETURN COALESCE(
                 )
                 )
             )
-    , FALSE);
+        , FALSE);
 END;
 $$ LANGUAGE plpgsql STABLE;

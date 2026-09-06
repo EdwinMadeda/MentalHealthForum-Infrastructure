@@ -133,27 +133,22 @@ RETURNS TRIGGER AS $$
 BEGIN
     -- Check if the user is an admin or moderator (OLD) or WILL BE an admin (NEW)
     IF (OLD.roles && ARRAY['admin', 'moderator'])
-        OR (OLD.groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer'])
-        OR (OLD.is_super_admin = TRUE)
-
+        OR (OLD.groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer', '/super_administrators'])
         OR (NEW.roles && ARRAY['admin', 'moderator'])
-        OR (NEW.groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer'])
-        OR (NEW.is_super_admin = TRUE)
+        OR (NEW.groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer', '/super_administrators'])
     THEN
-
         -- Prevent deactivation (changing account_status to anything other than ACTIVE)
         IF NEW.account_status != 'ACTIVE' AND NEW.account_status != OLD.account_status THEN
-            RAISE EXCEPTION 'Cannot deactivate an admin or moderator user...';
+            RAISE EXCEPTION 'Cannot deactivate an admin or moderator user (ID: %)', NEW.keycloak_id;
         END IF;
 
         -- Prevent deletion request
         IF NEW.deletion_requested_at IS NOT NULL AND OLD.deletion_requested_at IS NULL THEN
-            RAISE EXCEPTION 'Cannot mark an admin or moderator user for deletion...';
+            RAISE EXCEPTION 'Cannot mark an admin or moderator user for deletion (ID: %)', NEW.keycloak_id;
         END IF;
-
     END IF;
 
-RETURN NEW;
+    RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
@@ -166,26 +161,19 @@ EXECUTE FUNCTION prevent_admin_deactivation();
 -- ---------------------------------------------------------------------
 -- 16.17 Prevent admin deletion
 -- ---------------------------------------------------------------------
-CREATE OR REPLACE FUNCTION prevent_admin_deletion()
+CREATE OR REPLACE FUNCTION public.prevent_admin_deletion()
 RETURNS TRIGGER AS $$
 BEGIN
     -- Check if the user being deleted is an admin or moderator
     IF (OLD.roles && ARRAY['admin', 'moderator'])
-        OR (OLD.groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer'])
-
+        OR (OLD.groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer', '/super_administrators'])
     THEN
         RAISE EXCEPTION 'Cannot delete an admin or moderator user (ID: %)', OLD.keycloak_id;
+    END IF;
 
-END IF;
-RETURN OLD; -- Allowed
+    RETURN OLD; -- Allowed
 END;
 $$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE TRIGGER trg_prevent_admin_deletion
-BEFORE DELETE ON app_users
-FOR EACH ROW
-EXECUTE FUNCTION prevent_admin_deletion();
-
 
 -- ---------------------------------------------------------------------
 -- 16.18 Check user keycloak uniqueness
@@ -207,9 +195,9 @@ BEGIN
         END IF;
     END IF;
 
-    -- Prevent ANY change to keycloak_id
+    -- On UPDATE, prevent changing keycloak_id
     IF TG_OP = 'UPDATE' AND NEW.keycloak_id != OLD.keycloak_id THEN
-        RAISE EXCEPTION 'Cannot change keycloak_id - it is immutable';
+        RAISE EXCEPTION 'Cannot change keycloak_id % - it is immutable', OLD.keycloak_id;
     END IF;
 
     RETURN NEW;
