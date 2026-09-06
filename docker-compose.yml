@@ -155,7 +155,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 50M
+          memory: 100M
 
   # 5.3 Redis for Novu
   mhf-novu-redis:
@@ -195,7 +195,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 250M
+          memory: 350M
 
   # --- WEB DASHBOARD (The Entry Point) ---
   # 5.5 Novu Dashboard
@@ -235,7 +235,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 120M
+          memory: 250M
 
   # --- WORKER SERVICE ---
   # 5.7 Novu Worker Service (Optional - for background jobs)
