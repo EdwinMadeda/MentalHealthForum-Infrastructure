@@ -118,7 +118,23 @@ CREATE TABLE IF NOT EXISTS otp_credentials (
     purpose     otp_purpose_enum NOT NULL,
     expiry_date TIMESTAMP WITH TIME ZONE NOT NULL,
     created_at  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-                              );
+);
+
+-- =====================================================================
+-- 3.5 audit_reason_definitions
+-- =====================================================================
+
+CREATE TABLE audit_reason_definitions (
+	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+	key audit_reason_key_enum UNIQUE NOT NULL,
+	description TEXT NOT NULL,
+	action_type audit_action_type_enum NOT NULL,
+	is_active BOOLEAN DEFAULT true,
+	sort_order INTEGER DEFAULT 0,
+	created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+	updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 
 -- =====================================================================
 -- PART 4: FORUM STRUCTURE
@@ -705,3 +721,4 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at           TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
     expires_at           TIMESTAMP WITH TIME ZONE GENERATED ALWAYS AS (created_at + INTERVAL '90 days') STORED
 );
+

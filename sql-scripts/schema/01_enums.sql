@@ -3,6 +3,38 @@
 -- =====================================================================
 
 DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'audit_reason_key_enum') THEN
+CREATE TYPE audit_reason_key_enum AS ENUM (
+    'EXCEPTIONAL_CONTRIBUTION',
+    'TRUSTED_ESTABLISHED',
+    'PROFESSIONAL_CREDENTIALS',
+    'MODERATOR_NOMINATION',
+    'POLICY_VIOLATION',
+    'INACTIVITY',
+    'REQUESTED_DEMOTION',
+    'TEMP_SUSPENSION',
+    'ACCOUNT_RECOVERY',
+    'ADMIN_CORRECTION',
+    'SYSTEM_AUTO'
+);
+END IF;
+END $$;
+
+DO $$ BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'audit_action_type_enum') THEN
+CREATE TYPE audit_action_type_enum AS ENUM (
+    'PROMOTION',
+    'DEMOTION',
+    'DISABLED',
+    'ENABLED',
+    'GROUP_CHANGED',
+    'CREATED'
+);
+END IF;
+END $$;
+
+
+DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'connection_status_enum') THEN
 CREATE TYPE connection_status_enum AS ENUM ('PENDING', 'ACCEPTED', 'DECLINED');
 END IF;

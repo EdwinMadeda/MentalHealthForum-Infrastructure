@@ -3,7 +3,33 @@
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
--- 18.1 thread_type_definitions
+-- 18.1 audit_reason_definitions
+-- ---------------------------------------------------------------------
+INSERT INTO audit_reason_definitions (key, description, action_type, sort_order) VALUES
+                                                                                                    -- Promotions
+                                                                                                    ('EXCEPTIONAL_CONTRIBUTION', 'Exceptional contribution to the community', 'PROMOTION', 10),
+                                                                                                    ('TRUSTED_ESTABLISHED', 'User has established trust over time', 'PROMOTION', 20),
+                                                                                                    ('PROFESSIONAL_CREDENTIALS', 'User has verified professional credentials', 'PROMOTION', 30),
+                                                                                                    ('MODERATOR_NOMINATION', 'Nominated by fellow moderators', 'PROMOTION', 40),
+
+                                                                                                    -- Demotions
+                                                                                                    ('POLICY_VIOLATION', 'Violation of community guidelines', 'DEMOTION', 10),
+                                                                                                    ('INACTIVITY', 'Inactive for an extended period', 'DEMOTION', 20),
+                                                                                                    ('REQUESTED_DEMOTION', 'User requested demotion', 'DEMOTION', 30),
+
+                                                                                                    -- Disable/Enable
+                                                                                                    ('TEMP_SUSPENSION', 'Temporary suspension pending review', 'DISABLED', 10),
+                                                                                                    ('ACCOUNT_RECOVERY', 'Account recovered after verification', 'ENABLED', 10),
+
+                                                                                                    -- General
+                                                                                                    ('ADMIN_CORRECTION', 'Administrative correction', 'GROUP_CHANGED', 10),
+                                                                                                    ('SYSTEM_AUTO', 'System automated action', 'CREATED', 10);
+
+
+
+
+-- ---------------------------------------------------------------------
+-- 18.2 thread_type_definitions
 -- ---------------------------------------------------------------------
 INSERT INTO thread_type_definitions (thread_type, display_name, description, icon_hint, example) VALUES
                                                                                                      ('DISCUSSION', 'Discussion', 'Open-ended conversation on a topic. No specific outcome expected.', 'chat', 'Share your thoughts on coping with workplace anxiety'),
@@ -14,7 +40,7 @@ INSERT INTO thread_type_definitions (thread_type, display_name, description, ico
     ON CONFLICT (thread_type) DO NOTHING;
 
 -- ---------------------------------------------------------------------
--- 18.2 thread_status_definitions
+-- 18.3 thread_status_definitions
 -- ---------------------------------------------------------------------
 INSERT INTO thread_status_definitions (thread_status, display_name, description, user_visible) VALUES
                                                                                                    ('OPEN', 'Open', 'Active discussion, accepting new posts', TRUE),
@@ -24,7 +50,7 @@ INSERT INTO thread_status_definitions (thread_status, display_name, description,
     ON CONFLICT (thread_status) DO NOTHING;
 
 -- ---------------------------------------------------------------------
--- 18.3 reaction_definitions
+-- 18.4 reaction_definitions
 -- ---------------------------------------------------------------------
 INSERT INTO reaction_definitions (reaction_type, display_name, icon_class, description, reputation_points, available_to_roles, sort_order) VALUES
                                                                                                                                                ('UPVOTE', 'Upvote', '👍', 'General agreement or approval', 1, NULL, 1),
@@ -38,7 +64,7 @@ INSERT INTO reaction_definitions (reaction_type, display_name, icon_class, descr
     ON CONFLICT (reaction_type) DO NOTHING;
 
 -- ---------------------------------------------------------------------
--- 18.4 report_templates
+-- 18.5 report_templates
 -- ---------------------------------------------------------------------
 TRUNCATE report_templates RESTART IDENTITY CASCADE;
 INSERT INTO report_templates (report_category, template_text, requires_details, auto_severity, display_order, reason_code, example_details) VALUES
@@ -55,7 +81,7 @@ INSERT INTO report_templates (report_category, template_text, requires_details, 
                                                                                                                                                 ('OTHER', 'Other reason (please explain in detail)', TRUE, 'MEDIUM', 11, 'OTHER_REASON', 'Please provide a detailed explanation');
 
 -- ---------------------------------------------------------------------
--- 18.5 moderation_action_templates
+-- 18.6 moderation_action_templates
 -- ---------------------------------------------------------------------
 INSERT INTO moderation_action_templates (action_type, default_message, description, example_message, display_order) VALUES
                                                                                                                         ('POST_DELETED', 'Your post has been removed for violating community guidelines.', 'Remove inappropriate content', 'The post contained personal attacks which are not allowed', 1),
@@ -88,7 +114,7 @@ INSERT INTO moderation_action_templates (action_type, default_message, descripti
     ON CONFLICT (action_type) DO NOTHING;
 
 -- ---------------------------------------------------------------------
--- 18.6 dismissal_reason_templates
+-- 18.7 dismissal_reason_templates
 -- ---------------------------------------------------------------------
 INSERT INTO dismissal_reason_templates (reason_code, default_message, description, example_message, display_order) VALUES
                                                                                                                        ('FALSE_POSITIVE', 'This report was determined to be a false positive. No violation of community guidelines was found.', 'Content does not violate rules', 'Reported a post for "harassment" but it was politely disagreeing', 1),
@@ -103,7 +129,7 @@ INSERT INTO dismissal_reason_templates (reason_code, default_message, descriptio
     ON CONFLICT (reason_code) DO NOTHING;
 
 -- ---------------------------------------------------------------------
--- 18.7 moderation_tiers
+-- 18.8 moderation_tiers
 -- ---------------------------------------------------------------------
 INSERT INTO moderation_tiers (tier_name, allowed_actions, action_limits) VALUES
                                                                              ('moderator', '{
@@ -130,7 +156,7 @@ INSERT INTO moderation_tiers (tier_name, allowed_actions, action_limits) VALUES
     ON CONFLICT (tier_name) DO NOTHING;
 
 -- ---------------------------------------------------------------------
--- 18.8 warning_type_definitions
+-- 18.9 warning_type_definitions
 -- ---------------------------------------------------------------------
 INSERT INTO warning_type_definitions (warning_type, display_name, description, severity_level) VALUES
                                                                                                    ('INFORMAL', 'Informal Reminder', 'Friendly nudge about community guidelines', 1),
@@ -140,16 +166,18 @@ INSERT INTO warning_type_definitions (warning_type, display_name, description, s
     ON CONFLICT (warning_type) DO NOTHING;
 
 -- ---------------------------------------------------------------------
--- 18.9 role_configurations
+-- 18.10 role_configurations
 -- ---------------------------------------------------------------------
 INSERT INTO role_configurations (role_name) VALUES
                                                 ('moderator'), ('forum_member'), ('peer_supporter'), ('trusted_member'), ('admin')
     ON CONFLICT (role_name) DO NOTHING;
 
 -- ---------------------------------------------------------------------
--- 18.10 group_configurations
+-- 18.11 group_configurations
 -- ---------------------------------------------------------------------
 INSERT INTO group_configurations (group_path) VALUES
                                                   ('members'), ('members/new'), ('members/active'), ('members/trusted'),
                                                   ('moderators'), ('moderators/peer'), ('moderators/professional'), ('administrators')
     ON CONFLICT (group_path) DO NOTHING;
+
+

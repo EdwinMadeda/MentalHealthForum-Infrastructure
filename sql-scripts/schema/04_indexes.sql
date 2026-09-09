@@ -69,6 +69,12 @@ CREATE INDEX IF NOT EXISTS idx_forum_categories_search ON forum_categories
     );
 
 -- ---------------------------------------------------------------------
+-- audit_reason_definitions indexes
+-- ---------------------------------------------------------------------
+CREATE INDEX idx_audit_reason_definitions_action_type ON audit_reason_definitions(action_type);
+CREATE INDEX idx_audit_reason_definitions_active ON audit_reason_definitions(is_active);
+
+-- ---------------------------------------------------------------------
 -- category_tags indexes
 -- ---------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_category_tags_name ON category_tags (name);
