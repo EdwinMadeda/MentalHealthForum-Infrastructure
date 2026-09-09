@@ -3,35 +3,36 @@
 -- =====================================================================
 
 DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'audit_reason_key_enum') THEN
-CREATE TYPE audit_reason_key_enum AS ENUM (
-    'EXCEPTIONAL_CONTRIBUTION',
-    'TRUSTED_ESTABLISHED',
-    'PROFESSIONAL_CREDENTIALS',
-    'MODERATOR_NOMINATION',
-    'POLICY_VIOLATION',
-    'INACTIVITY',
-    'REQUESTED_DEMOTION',
-    'TEMP_SUSPENSION',
-    'ACCOUNT_RECOVERY',
-    'ADMIN_CORRECTION',
-    'SYSTEM_AUTO'
-);
-END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_audit_reason_key_enum') THEN
+        CREATE TYPE user_audit_reason_key_enum AS ENUM (
+            'EXCEPTIONAL_CONTRIBUTION',
+            'TRUSTED_ESTABLISHED',
+            'PROFESSIONAL_CREDENTIALS',
+            'MODERATOR_NOMINATION',
+            'POLICY_VIOLATION',
+            'INACTIVITY',
+            'REQUESTED_DEMOTION',
+            'TEMP_SUSPENSION',
+            'ACCOUNT_RECOVERY',
+            'ADMIN_CORRECTION',
+            'SYSTEM_AUTO'
+        );
+    END IF;
 END $$;
 
 DO $$ BEGIN
-    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'audit_action_type_enum') THEN
-CREATE TYPE audit_action_type_enum AS ENUM (
-    'PROMOTION',
-    'DEMOTION',
-    'DISABLED',
-    'ENABLED',
-    'GROUP_CHANGED',
-    'CREATED'
-);
-END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_audit_action_type_enum') THEN
+        CREATE TYPE user_audit_action_type_enum AS ENUM (
+            'PROMOTION',
+            'DEMOTION',
+            'DISABLED',
+            'ENABLED',
+            'GROUP_CHANGED',
+            'CREATED'
+        );
+    END IF;
 END $$;
+
 
 
 DO $$ BEGIN

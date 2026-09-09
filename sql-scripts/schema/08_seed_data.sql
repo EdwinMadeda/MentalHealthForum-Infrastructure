@@ -3,9 +3,10 @@
 -- =====================================================================
 
 -- ---------------------------------------------------------------------
--- 18.1 audit_reason_definitions
+-- 18.1 user_audit_reason_definitions
 -- ---------------------------------------------------------------------
-INSERT INTO audit_reason_definitions (key, description, action_type, sort_order) VALUES
+INSERT INTO user_audit_reason_definitions (key, description, action_type, sort_order) VALUES
+
                                                                                                     -- Promotions
                                                                                                     ('EXCEPTIONAL_CONTRIBUTION', 'Exceptional contribution to the community', 'PROMOTION', 10),
                                                                                                     ('TRUSTED_ESTABLISHED', 'User has established trust over time', 'PROMOTION', 20),

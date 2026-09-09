@@ -121,18 +121,17 @@ CREATE TABLE IF NOT EXISTS otp_credentials (
 );
 
 -- =====================================================================
--- 3.5 audit_reason_definitions
+-- 3.5 user_audit_reason_definitions
 -- =====================================================================
-
-CREATE TABLE audit_reason_definitions (
-	id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-	key audit_reason_key_enum UNIQUE NOT NULL,
-	description TEXT NOT NULL,
-	action_type audit_action_type_enum NOT NULL,
-	is_active BOOLEAN DEFAULT true,
-	sort_order INTEGER DEFAULT 0,
-	created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-	updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+CREATE TABLE user_audit_reason_definitions (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    key         user_audit_reason_key_enum UNIQUE NOT NULL,
+    description TEXT NOT NULL,
+    action_type user_audit_action_type_enum NOT NULL,
+    is_active   BOOLEAN DEFAULT true,
+    sort_order  INTEGER DEFAULT 0,
+    created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 
