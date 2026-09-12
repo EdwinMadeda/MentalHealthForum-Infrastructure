@@ -134,6 +134,21 @@ CREATE TABLE user_audit_reason_definitions (
     updated_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
+-- =====================================================================
+-- 3.6 user_audit_log
+-- =====================================================================
+CREATE TABLE user_audit_log (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
+    action_type user_audit_action_type_enum NOT NULL,
+    old_value JSONB,
+    new_value JSONB,
+    performed_by UUID NOT NULL,
+    reason_definition_id UUID NULL,
+    custom_reason TEXT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
 
 -- =====================================================================
 -- PART 4: FORUM STRUCTURE

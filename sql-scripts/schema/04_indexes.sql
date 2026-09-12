@@ -58,6 +58,23 @@ CREATE INDEX IF NOT EXISTS idx_otp_email_purpose ON otp_credentials (email, purp
 CREATE INDEX IF NOT EXISTS idx_otp_expiry ON otp_credentials (expiry_date);
 
 -- ---------------------------------------------------------------------
+-- user_audit_reason_definitions indexes
+-- ---------------------------------------------------------------------
+CREATE INDEX idx_user_audit_reason_definitions_action_type ON user_audit_reason_definitions(action_type);
+CREATE INDEX idx_user_audit_reason_definitions_active ON user_audit_reason_definitions(is_active);
+
+-- ---------------------------------------------------------------------
+-- user_audit_log indexes
+-- ---------------------------------------------------------------------
+CREATE INDEX idx_user_audit_log_user_id ON user_audit_log(user_id);
+CREATE INDEX idx_user_audit_log_created_at ON user_audit_log(created_at DESC);
+CREATE INDEX idx_user_audit_log_action_type ON user_audit_log(action_type);
+CREATE INDEX idx_user_audit_log_performed_by ON user_audit_log(performed_by);
+
+-- Composite index for user history queries
+CREATE INDEX idx_user_audit_log_user_created ON user_audit_log(user_id, created_at DESC);
+
+-- ---------------------------------------------------------------------
 -- forum_categories indexes
 -- ---------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_category_active_sort ON forum_categories (is_active DESC, sort_order ASC);
@@ -67,12 +84,6 @@ CREATE INDEX IF NOT EXISTS idx_forum_categories_search ON forum_categories
     USING gin ((to_tsvector('public.english_unaccent', COALESCE(name, '')) ||
     to_tsvector('public.english_unaccent', COALESCE(description, '')))
     );
-
--- ---------------------------------------------------------------------
--- user_audit_reason_definitions indexes
--- ---------------------------------------------------------------------
-CREATE INDEX idx_user_audit_reason_definitions_action_type ON user_audit_reason_definitions(action_type);
-CREATE INDEX idx_user_audit_reason_definitions_active ON user_audit_reason_definitions(is_active);
 
 -- ---------------------------------------------------------------------
 -- category_tags indexes

@@ -18,3 +18,10 @@ ALTER TABLE forum_threads
             ON DELETE SET NULL;
 
 COMMENT ON CONSTRAINT fk_best_answer_post ON forum_threads IS 'Best answer must be a post from the same thread';
+
+-- Foreign key to reason definitions (soft reference, keeps logs if template deleted)
+ALTER TABLE user_audit_log
+ADD CONSTRAINT fk_audit_log_reason_definition
+FOREIGN KEY (reason_definition_id)
+REFERENCES user_audit_reason_definitions(id)
+ON DELETE SET NULL;
