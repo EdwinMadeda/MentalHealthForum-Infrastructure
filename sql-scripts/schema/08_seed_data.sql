@@ -6,23 +6,22 @@
 -- 18.1 user_audit_reason_definitions
 -- ---------------------------------------------------------------------
 INSERT INTO user_audit_reason_definitions (key, description, action_type, sort_order) VALUES
+                                                                                                    -- Promotions (synced users only)
+                                                                                                    ('EXCEPTIONAL_CONTRIBUTION', 'Exceptional contribution to the community', 'PROMOTED', 10),
+                                                                                                    ('TRUSTED_ESTABLISHED', 'User has established trust over time', 'PROMOTED', 20),
+                                                                                                    ('PROFESSIONAL_CREDENTIALS', 'User has verified professional credentials', 'PROMOTED', 30),
+                                                                                                    ('MODERATOR_NOMINATION', 'Nominated by fellow moderators', 'PROMOTED', 40),
 
-                                                                                                    -- Promotions
-                                                                                                    ('EXCEPTIONAL_CONTRIBUTION', 'Exceptional contribution to the community', 'PROMOTION', 10),
-                                                                                                    ('TRUSTED_ESTABLISHED', 'User has established trust over time', 'PROMOTION', 20),
-                                                                                                    ('PROFESSIONAL_CREDENTIALS', 'User has verified professional credentials', 'PROMOTION', 30),
-                                                                                                    ('MODERATOR_NOMINATION', 'Nominated by fellow moderators', 'PROMOTION', 40),
-
-                                                                                                    -- Demotions
-                                                                                                    ('POLICY_VIOLATION', 'Violation of community guidelines', 'DEMOTION', 10),
-                                                                                                    ('INACTIVITY', 'Inactive for an extended period', 'DEMOTION', 20),
-                                                                                                    ('REQUESTED_DEMOTION', 'User requested demotion', 'DEMOTION', 30),
+                                                                                                    -- Demotions (synced users only)
+                                                                                                    ('POLICY_VIOLATION', 'Violation of community guidelines', 'DEMOTED', 10),
+                                                                                                    ('INACTIVITY', 'Inactive for an extended period', 'DEMOTED', 20),
+                                                                                                    ('REQUESTED_DEMOTION', 'User requested demotion', 'DEMOTED', 30),
 
                                                                                                     -- Disable/Enable
                                                                                                     ('TEMP_SUSPENSION', 'Temporary suspension pending review', 'DISABLED', 10),
                                                                                                     ('ACCOUNT_RECOVERY', 'Account recovered after verification', 'ENABLED', 10),
 
-                                                                                                    -- General
+                                                                                                    -- General (pending users only)
                                                                                                     ('ADMIN_CORRECTION', 'Administrative correction', 'GROUP_CHANGED', 10),
                                                                                                     ('SYSTEM_AUTO', 'System automated action', 'CREATED', 10);
 

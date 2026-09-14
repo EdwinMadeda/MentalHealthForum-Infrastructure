@@ -60,8 +60,9 @@ CREATE INDEX IF NOT EXISTS idx_otp_expiry ON otp_credentials (expiry_date);
 -- ---------------------------------------------------------------------
 -- user_audit_reason_definitions indexes
 -- ---------------------------------------------------------------------
-CREATE INDEX idx_user_audit_reason_definitions_action_type ON user_audit_reason_definitions(action_type);
-CREATE INDEX idx_user_audit_reason_definitions_active ON user_audit_reason_definitions(is_active);
+CREATE INDEX idx_audit_reason_definitions_action_type ON user_audit_reason_definitions(action_type);
+CREATE INDEX idx_audit_reason_definitions_active ON user_audit_reason_definitions(is_active);
+CREATE INDEX idx_audit_reason_definitions_key ON user_audit_reason_definitions(key);
 
 -- ---------------------------------------------------------------------
 -- user_audit_log indexes

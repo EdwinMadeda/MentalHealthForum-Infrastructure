@@ -124,29 +124,29 @@ CREATE TABLE IF NOT EXISTS otp_credentials (
 -- 3.5 user_audit_reason_definitions
 -- =====================================================================
 CREATE TABLE user_audit_reason_definitions (
-    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    key         user_audit_reason_key_enum UNIQUE NOT NULL,
-    description TEXT NOT NULL,
-    action_type user_audit_action_type_enum NOT NULL,
-    is_active   BOOLEAN DEFAULT true,
-    sort_order  INTEGER DEFAULT 0,
-    created_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at  TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    key             user_audit_reason_key_enum UNIQUE NOT NULL,
+    description     TEXT NOT NULL,
+    action_type     user_audit_action_type_enum NOT NULL,
+    is_active       BOOLEAN DEFAULT true,
+    sort_order      INTEGER DEFAULT 0,
+    created_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- =====================================================================
 -- 3.6 user_audit_log
 -- =====================================================================
 CREATE TABLE user_audit_log (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID NOT NULL,
-    action_type user_audit_action_type_enum NOT NULL,
-    old_value JSONB,
-    new_value JSONB,
-    performed_by UUID NOT NULL,
-    reason_definition_id UUID NULL,
-    custom_reason TEXT NULL,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+    id                      UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id                 UUID NOT NULL,
+    action_type             user_audit_action_type_enum NOT NULL,
+    old_value               JSONB,
+    new_value               JSONB,
+    performed_by            UUID NULL,
+    reason_definition_id    UUID NULL,
+    custom_reason           TEXT NULL,
+    created_at              TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 

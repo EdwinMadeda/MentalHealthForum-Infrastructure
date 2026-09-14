@@ -22,14 +22,17 @@ END $$;
 
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_audit_action_type_enum') THEN
-        CREATE TYPE user_audit_action_type_enum AS ENUM (
-            'PROMOTION',
-            'DEMOTION',
-            'DISABLED',
-            'ENABLED',
-            'GROUP_CHANGED',
-            'CREATED'
-        );
+    CREATE TYPE user_audit_action_type_enum AS ENUM (
+        'CREATED',
+        'SYNCED',
+        'PROMOTED',
+        'DEMOTED',
+        'GROUP_CHANGED',
+        'ENABLED',
+        'DISABLED',
+        'INVITE_REISSUED',
+        'INVITE_REVOKED'
+    );
     END IF;
 END $$;
 
