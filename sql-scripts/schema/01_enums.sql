@@ -2,9 +2,12 @@
 -- PART 2: ENUMS (Alphabetical, idempotent)
 -- =====================================================================
 
+-- V{version}__add_new_user_audit_reason_keys.sql
+
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_audit_reason_key_enum') THEN
-        CREATE TYPE user_audit_reason_key_enum AS ENUM (
+        CREATE TYPE public.user_audit_reason_key_enum AS ENUM (
+            -- ORIGINAL VALUES
             'EXCEPTIONAL_CONTRIBUTION',
             'TRUSTED_ESTABLISHED',
             'PROFESSIONAL_CREDENTIALS',
@@ -15,10 +18,45 @@ DO $$ BEGIN
             'TEMP_SUSPENSION',
             'ACCOUNT_RECOVERY',
             'ADMIN_CORRECTION',
-            'SYSTEM_AUTO'
+            'SYSTEM_AUTO',
+
+            -- PROMOTED additions
+            'COMMUNITY_BUILDER',
+            'MENTORSHIP',
+            'CONSISTENT_CONTRIBUTIONS',
+            'LEADERSHIP_QUALITIES',
+            'PEER_SUPPORT_EXCELLENCE',
+            'SAFETY_ADVOCATE',
+
+            -- DEMOTED additions
+            'CODE_OF_CONDUCT_VIOLATION',
+            'ROLE_MISMATCH',
+            'TEMPORARY_STEP_DOWN',
+
+            -- DISABLED additions
+            'SECURITY_CONCERN',
+            'USER_REQUEST_DISABLE',
+            'DUPLICATE_ACCOUNT',
+            'SAFETY_CONCERN',
+
+            -- ENABLED additions
+            'SUSPENSION_LIFTED',
+            'APPEAL_APPROVED',
+            'USER_REQUEST_ENABLE',
+            'READY_TO_RETURN',
+
+            -- GROUP_CHANGED additions
+            'ROLE_REALIGNMENT',
+            'SYSTEM_MIGRATION',
+            'ERROR_CORRECTION',
+
+            -- INVITE_REVOKED additions
+            'USER_NO_LONGER_INTERESTED',
+            'USER_REQUEST_PAUSE'
         );
     END IF;
 END $$;
+
 
 DO $$ BEGIN
     IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'user_audit_action_type_enum') THEN

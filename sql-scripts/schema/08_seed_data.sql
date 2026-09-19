@@ -25,6 +25,48 @@ INSERT INTO user_audit_reason_definitions (key, description, action_type, sort_o
                                                                                                     ('ADMIN_CORRECTION', 'Administrative correction', 'GROUP_CHANGED', 10),
                                                                                                     ('SYSTEM_AUTO', 'System automated action', 'CREATED', 10);
 
+-- V{version}__seed_new_user_audit_reason_definitions.sql
+
+-- PROMOTED additions
+INSERT INTO user_audit_reason_definitions (key, description, action_type, sort_order) VALUES
+    ('COMMUNITY_BUILDER', 'Built community initiatives', 'PROMOTED', 50),
+    ('MENTORSHIP', 'Mentored other members', 'PROMOTED', 60),
+    ('CONSISTENT_CONTRIBUTIONS', 'Consistent contributions over time', 'PROMOTED', 70),
+    ('LEADERSHIP_QUALITIES', 'Demonstrated leadership qualities', 'PROMOTED', 80),
+    ('PEER_SUPPORT_EXCELLENCE', 'Excellence in peer support', 'PROMOTED', 90),
+    ('SAFETY_ADVOCATE', 'Advocated for community safety', 'PROMOTED', 100);
+
+-- DEMOTED additions
+INSERT INTO user_audit_reason_definitions (key, description, action_type, sort_order) VALUES
+    ('CODE_OF_CONDUCT_VIOLATION', 'Violation of code of conduct', 'DEMOTED', 40),
+    ('ROLE_MISMATCH', 'Role no longer aligns with user''s current needs', 'DEMOTED', 50),
+    ('TEMPORARY_STEP_DOWN', 'Temporary step down for personal reasons', 'DEMOTED', 80);
+
+-- DISABLED additions
+INSERT INTO user_audit_reason_definitions (key, description, action_type, sort_order) VALUES
+    ('SECURITY_CONCERN', 'Account flagged for security review', 'DISABLED', 20),
+    ('USER_REQUEST_DISABLE', 'User requested account disable', 'DISABLED', 30),
+    ('DUPLICATE_ACCOUNT', 'Duplicate account detected', 'DISABLED', 40),
+    ('SAFETY_CONCERN', 'Account flagged for safety review', 'DISABLED', 50);
+
+-- ENABLED additions
+INSERT INTO user_audit_reason_definitions (key, description, action_type, sort_order) VALUES
+    ('SUSPENSION_LIFTED', 'Suspension period ended', 'ENABLED', 20),
+    ('APPEAL_APPROVED', 'User appeal approved', 'ENABLED', 30),
+    ('USER_REQUEST_ENABLE', 'User requested account enable', 'ENABLED', 40),
+    ('READY_TO_RETURN', 'User is ready to return to community', 'ENABLED', 70);
+
+-- GROUP_CHANGED additions
+INSERT INTO user_audit_reason_definitions (key, description, action_type, sort_order) VALUES
+    ('ROLE_REALIGNMENT', 'Organizational restructuring', 'GROUP_CHANGED', 20),
+    ('SYSTEM_MIGRATION', 'System migration adjustment', 'GROUP_CHANGED', 30),
+    ('ERROR_CORRECTION', 'Correction of system error', 'GROUP_CHANGED', 40);
+
+-- INVITE_REVOKED additions
+INSERT INTO user_audit_reason_definitions (key, description, action_type, sort_order) VALUES
+    ('USER_NO_LONGER_INTERESTED', 'User no longer interested', 'INVITE_REVOKED', 50),
+    ('USER_REQUEST_PAUSE', 'User requested pause before joining', 'INVITE_REVOKED', 70);
+
 
 
 
