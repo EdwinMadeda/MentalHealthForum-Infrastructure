@@ -287,6 +287,32 @@ services:
           # Was 160M and sat at 91%; sends admin email MFA — must not OOM.
           memory: 256M
 
+
+  # ----------------------------------------------------
+  # 6. MAILPIT — local SMTP catch-all for dev email testing
+  # ----------------------------------------------------
+  # ----------------------------------------------------
+  # Replaces Ethereal guest inboxes, whose credentials rotate per session and force reconfiguring Novu daily.
+  # Mailpit catches all SMTP on 1025 and displays messages at http://localhost:8025 — no external service,
+  # no credentials to manage, no send limits. Messages are held in memory
+  # and cleared on container restart (intentional; they're throwaway tests)
+  mailpit:
+    image: axllent/mailpit
+    container_name: mhf-mailpit
+    ports:
+      - "1025:1025"                # SMTP — point Novu/apps here
+      - "8025:8025"                # Web UI — view caught emails
+    environment:
+      # Keep messages in memory; no need to persist test emails.
+      MP_MAX_MESSAGES: 500               # cap in-memory message count
+      MP_SMTP_AUTH_ACCEPT_ANY: 1         # accept any username/password (or none)
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1     # allow plain SMTP auth (local only)
+    restart: always
+    deploy:
+      resources:
+        limits:
+          memory: 64M
+
 # ----------------------------------------------------
 # NETWORK CONFIGURATION
 # ----------------------------------------------------
