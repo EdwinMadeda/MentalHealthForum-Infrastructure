@@ -32,10 +32,10 @@
   "supportedLocales": ["en", "es", "fr", "de"],
   "defaultLocale": "en",
 
-  "loginTheme": "keycloak",
-  "accountTheme": "keycloak.v2",
-  "adminTheme": "keycloak.v2",
-  "emailTheme": "keycloak.v2",
+  "loginTheme":   "keycloak",
+  "accountTheme": "keycloak.v3",
+  "adminTheme":   "keycloak.v3",
+  "emailTheme":   "keycloak.v3",
 
   "clients": [
     {
@@ -132,7 +132,7 @@
   },
 
   "eventsEnabled": true,
-  "eventsListeners": ["jboss-logging", "event-logger"],
+  "eventsListeners": ["jboss-logging"],
   "enabledEventTypes": [
     "LOGIN",
     "LOGIN_ERROR",

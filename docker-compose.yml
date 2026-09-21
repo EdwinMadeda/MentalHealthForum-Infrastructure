@@ -1,3 +1,22 @@
+# =============================================================
+# RESOURCE TUNING NOTES (last revised: 2026-09-21)
+# -------------------------------------------------------------
+# Host: Manjaro, 8 GB RAM. Docker budget ~3.5 GB.
+#
+# Key changes from the original compose:
+#   - Keycloak: 512M → 1024M, plus JAVA_OPTS_APPEND with -Xmx512m.
+#     Original 512M cap caused JVM SIGSEGV under load. Heap must stay
+#     well under the container limit; -Xmx controls that.
+#   - Novu ws/worker: 160M → 256M (were running at 91-98%).
+#   - Novu API: 384M → 448M. Novu dashboard: 96M → 128M.
+#   - Novu mongo-express: 100M → 160M.
+#   - Postgres: 128M → 256M each (baseline is ~80-100M).
+#   - pgAdmin: 512M → 384M (it's a UI; 512M was overkill).
+#
+# Do NOT add -XX:+UseSerialGC to JAVA_OPTS_APPEND — the Keycloak image
+# already sets a GC; a second one aborts JVM startup.
+# =============================================================
+
 services:
   # ----------------------------------------------------
   # 1. KEYCLOAK SERVICE
@@ -5,24 +24,30 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.4.2
     container_name: mhf-keycloak
+    # start-dev for local only; use `start --optimized` for production.
     command: start-dev --import-realm
     ports:
-      - "9080:8080"
+      - "9080:8080"                # host 9080 → container 8080
     environment:
       KEYCLOAK_ADMIN: mhf-temp-admin
-      KEYCLOAK_ADMIN_PASSWORD: mhf-temp-password
+      KEYCLOAK_ADMIN_PASSWORD: mhf-temp-password     # local dev only
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
       KC_DB_USERNAME: keycloak_user
-      KC_DB_PASSWORD: keycloak_password
+      KC_DB_PASSWORD: keycloak_password              # local dev only
 
-      KC_HEALTH_ENABLED: true
-      KC_HOSTNAME_URL: http://localhost:9080
-      KC_HTTP_ENABLED: true
-      KC_PROXY: edge
+      KC_HEALTH_ENABLED: "true"
+      KC_HTTP_ENABLED: "true"
+      # Hostname v2 (replaces deprecated KC_HOSTNAME_URL / KC_PROXY).
+      KC_HOSTNAME: http://localhost:9080
+      KC_HOSTNAME_STRICT: "false"
+      KC_PROXY_HEADERS: xforwarded
+
+      # -Xmx512m keeps heap under the 1024M container, leaving room for
+      # Infinispan off-heap + native. See header note re: -XX:+UseSerialGC.
+      JAVA_OPTS_APPEND: "-Xms256m -Xmx512m -XX:MaxMetaspaceSize=160m -XX:MaxDirectMemorySize=48m"
 
     volumes:
-      # Mounts declarative configuration file
       - ./keycloak/mentalhealthforum-realm.json:/opt/keycloak/data/import/mentalhealthforum-realm.json
       - ./keycloak/themes:/opt/keycloak/themes
 
@@ -34,7 +59,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 1024M
 
   # ----------------------------------------------------
   # 2. KEYCLOAK POSTGRES DATABASE
@@ -43,7 +68,7 @@ services:
     image: postgres:16-alpine
     container_name: mhf-keycloak-db
     ports:
-      - "5433:5432"
+      - "5433:5432"                # 5433 avoids clash with local Postgres
     environment:
       POSTGRES_DB: keycloak
       POSTGRES_USER: keycloak_user
@@ -62,10 +87,10 @@ services:
     deploy:
       resources:
         limits:
-          memory: 128M
+          memory: 256M
 
   # ----------------------------------------------------
-  # 3. FORUM POSTGRES DATABASE (For Spring Boot Data)
+  # 3. FORUM POSTGRES DATABASE
   # ----------------------------------------------------
   forum-db:
     image: postgres:16-alpine
@@ -79,7 +104,6 @@ services:
 
     volumes:
       - ./databases/forum-db/data:/var/lib/postgresql/data
-      #- ./sql-scripts/init-forum-db.sql:/docker-entrypoint-initdb.d/init-forum-db.sql
 
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U forum_user -d forum"]
@@ -91,7 +115,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 128M
+          memory: 256M
 
   # ----------------------------------------------------
   # 4. PGADMIN
@@ -102,8 +126,9 @@ services:
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@mhf.co
       PGADMIN_DEFAULT_PASSWORD: admin123
-      PGADMIN_GUNICORN_WORKERS: 1 # Minimizes baseline RAM usage by scaling down python processes
-      PGADMIN_GUNICORN_THREADS: 2 # Allows shared-memory multitasking inside the worker
+      # 1 worker keeps baseline RAM low; 2 threads still allow concurrent queries.
+      PGADMIN_GUNICORN_WORKERS: 1
+      PGADMIN_GUNICORN_THREADS: 2
 
     ports:
       - "5050:80"
@@ -111,27 +136,30 @@ services:
       - keycloak-db
       - forum-db
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:80 || exit 1"]
-      interval: 10s
+      # /misc/ping is pgAdmin's readiness endpoint. curl isn't present in
+      # the image, so use wget; CMD-SHELL so `|| exit 1` is interpreted.
+      test: [ "CMD-SHELL", "wget -q --spider http://localhost:80/misc/ping || exit 1" ]
+      interval: 15s
       timeout: 5s
       retries: 5
+      start_period: 30s  # pgAdmin takes ~15-25s to boot; don't flag it early
 
     restart: always
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 384M
 
   # ----------------------------------------------------
   # 5. NOVU LEAN STACK
   # ----------------------------------------------------
-  # --- CORE DATABASES ---
   # 5.1 MongoDB for Novu
   mhf-novu-mongodb:
-    image: mongo:4.4 # Use 4.4 for better compatibility with local Novu setups
-    command: mongod --wiredTigerCacheSizeGB 0.25 # Tells mongo db to only use the allocated memory for working data cache
+    image: mongo:4.4
+    # Cap WiredTiger cache so Mongo doesn't grab ~50% of host RAM.
+    command: mongod --wiredTigerCacheSizeGB 0.25
     ports:
-      - "127.0.0.1:27017:27017"
+      - "127.0.0.1:27017:27017"    # localhost-only
     container_name: mhf-novu-mongodb
     volumes:
       - ./databases/mhf-novu-mongodb:/data/db
@@ -139,7 +167,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 384M
+          memory: 256M
 
   # 5.2 Mongo Express for MongoDB
   mhf-novu-mongo-express:
@@ -151,14 +179,14 @@ services:
       ME_CONFIG_BASICAUTH_USERNAME: admin@mhf.co
       ME_CONFIG_BASICAUTH_PASSWORD: admin123
     ports:
-      - "127.0.0.1:8091:8081"
+      - "127.0.0.1:8091:8081"      # localhost-only
     depends_on:
       - mhf-novu-mongodb
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          memory: 100M
+          memory: 160M
 
   # 5.3 Redis for Novu
   mhf-novu-redis:
@@ -168,9 +196,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 64M
+          memory: 96M
 
-    # --- API SERVICE ---
   # 5.4 Novu API Service
   mhf-novu-api:
     image: ghcr.io/novuhq/novu/api:2.1.1
@@ -184,24 +211,20 @@ services:
       - NODE_ENV=local
       - MONGO_URL=mongodb://mhf-novu-mongodb:27017/novu-db
       - REDIS_URL=redis://mhf-novu-redis:6379
-      # ADD THESE TWO LINES BELOW
       - REDIS_HOST=mhf-novu-redis
       - REDIS_PORT=6379
       - JWT_SECRET=mhf_dev_secret_123
       - STORE_ENCRYPTION_KEY=12345678901234567890123456789012
       - FRONT_BASE_URL=http://localhost:4200
-      # Ensure your Next.js origin is allowed
       - CORS_ALLOWED_ORIGINS=http://localhost:3001,http://localhost:3000,http://localhost:4200
-      # We add every possible variation. Note the lack of spaces after commas.
-      #    - CORS_ALLOWED_HEADERS=Content-Type,Authorization,novu-api-version,x-novu-client-version,sentry-trace,baggage
-      - NODE_OPTIONS=--max-old-space-size=384 # Triggers early Node garbage collection to fit inside 450M container
+      # Keep Node heap ~85% of the container limit.
+      - NODE_OPTIONS=--max-old-space-size=384
     restart: always
     deploy:
       resources:
         limits:
-          memory: 450M
+          memory: 448M
 
-  # --- WEB DASHBOARD (The Entry Point) ---
   # 5.5 Novu Dashboard
   mhf-novu-dashboard:
     image: ghcr.io/novuhq/novu/web:2.1.1
@@ -215,9 +238,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: 100M
+          memory: 128M
 
-    # --- WEBSOCKET SERVICE ---
   # 5.6 Novu WebSocket Service
   mhf-novu-ws:
     image: ghcr.io/novuhq/novu/ws:2.1.1
@@ -231,19 +253,18 @@ services:
       - REDIS_URL=redis://mhf-novu-redis:6379
       - REDIS_HOST=mhf-novu-redis
       - REDIS_PORT=6379
-      - JWT_SECRET=mhf_dev_secret_123 # MUST match API service
-      # Added these for better local resolution
+      - JWT_SECRET=mhf_dev_secret_123      # MUST match the API service
       - SOCKET_IO_PROTOCOL_VERSION=4
       - CORS_ALLOWED_ORIGINS=http://localhost:3001,http://localhost:4200,http://localhost:3000,http://127.0.0.1:3001
-      - NODE_OPTIONS=--max-old-space-size=200 # Caps Node memory safely below the 256M container threshold
+      - NODE_OPTIONS=--max-old-space-size=200
     restart: always
     deploy:
       resources:
         limits:
+          # Was 160M and sat at 98%; bumped for headroom against bursts.
           memory: 256M
 
-  # --- WORKER SERVICE ---
-  # 5.7 Novu Worker Service (Optional - for background jobs)
+  # 5.7 Novu Worker Service
   mhf-novu-worker:
     image: ghcr.io/novuhq/novu/worker:2.1.1
     container_name: mhf-novu-worker
@@ -254,17 +275,16 @@ services:
       - NODE_ENV=local
       - MONGO_URL=mongodb://mhf-novu-mongodb:27017/novu-db
       - REDIS_URL=redis://mhf-novu-redis:6379
-      # These two are often required in 2.1.1 to stop it from defaulting to 127.0.0.1
       - REDIS_HOST=mhf-novu-redis
       - REDIS_PORT=6379
-      # Sync the secret just in case
       - JWT_SECRET=mhf_dev_secret_123
       - STORE_ENCRYPTION_KEY=12345678901234567890123456789012
-      - NODE_OPTIONS=--max-old-space-size=200 # Caps Node memory safely below the 256M container threshold
+      - NODE_OPTIONS=--max-old-space-size=200
     restart: always
     deploy:
       resources:
         limits:
+          # Was 160M and sat at 91%; sends admin email MFA — must not OOM.
           memory: 256M
 
 # ----------------------------------------------------
