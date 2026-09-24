@@ -1,9 +1,9 @@
 # =============================================================
-# RESOURCE TUNING NOTES (last revised: 2026-09-21)
-# -------------------------------------------------------------
+# HARD DISCIPLINED RESOURCE TUNING (Manjaro XFCE 8GB Survival Config)
+# =============================================================
 # Host: Manjaro, 8 GB RAM. Docker budget ~3.5 GB.
 #
-# Key changes from the original compose:
+# Key tuning decisions (carried over from prior revisions):
 #   - Keycloak: 512M → 1024M, plus JAVA_OPTS_APPEND with -Xmx512m.
 #     Original 512M cap caused JVM SIGSEGV under load. Heap must stay
 #     well under the container limit; -Xmx controls that.
@@ -12,6 +12,14 @@
 #   - Novu mongo-express: 100M → 160M.
 #   - Postgres: 128M → 256M each (baseline is ~80-100M).
 #   - pgAdmin: 512M → 384M (it's a UI; 512M was overkill).
+#
+# CPU limits added (File 1 enhancement):
+#   - Caps protect the 8 GB host from runaway loops in any single
+#     service; memory alone doesn't stop CPU starvation.
+#
+# Debug-only services gated behind `profiles: [debug]` (File 1 enhancement):
+#   - pgAdmin and mongo-express are NOT needed for normal dev flow.
+#     Start them with `docker compose --profile debug up -d`.
 #
 # Do NOT add -XX:+UseSerialGC to JAVA_OPTS_APPEND — the Keycloak image
 # already sets a GC; a second one aborts JVM startup.
@@ -55,10 +63,11 @@ services:
       keycloak-db:
         condition: service_healthy
 
-    restart: always
+    restart: "no"
     deploy:
       resources:
         limits:
+          cpus: '0.50'
           memory: 1024M
 
   # ----------------------------------------------------
@@ -83,10 +92,11 @@ services:
       timeout: 5s
       retries: 5
 
-    restart: always
+    restart: "no"
     deploy:
       resources:
         limits:
+          cpus: '0.25'
           memory: 256M
 
   # ----------------------------------------------------
@@ -111,18 +121,22 @@ services:
       timeout: 5s
       retries: 5
 
-    restart: always
+    restart: "no"
     deploy:
       resources:
         limits:
+          cpus: '0.25'
           memory: 256M
 
   # ----------------------------------------------------
-  # 4. PGADMIN
+  # 4. PGADMIN (Debug Profile Layer)
   # ----------------------------------------------------
+  # Not started by default — run with `--profile debug`.
   pgadmin:
     image: dpage/pgadmin4:8
     container_name: mhf-pgadmin
+    profiles:
+      - debug
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@mhf.co
       PGADMIN_DEFAULT_PASSWORD: admin123
@@ -144,10 +158,11 @@ services:
       retries: 5
       start_period: 30s  # pgAdmin takes ~15-25s to boot; don't flag it early
 
-    restart: always
+    restart: "no"
     deploy:
       resources:
         limits:
+          cpus: '0.25'
           memory: 384M
 
   # ----------------------------------------------------
@@ -163,16 +178,20 @@ services:
     container_name: mhf-novu-mongodb
     volumes:
       - ./databases/mhf-novu-mongodb:/data/db
-    restart: always
+    restart: "no"
     deploy:
       resources:
         limits:
+          cpus: '0.25'
           memory: 256M
 
-  # 5.2 Mongo Express for MongoDB
+  # 5.2 Mongo Express for MongoDB (Debug Profile Layer)
+  # Not started by default — run with `--profile debug`.
   mhf-novu-mongo-express:
     image: mongo-express
     container_name: mhf-novu-mongo-express
+    profiles:
+      - debug
     environment:
       ME_CONFIG_MONGODB_URL: mongodb://mhf-novu-mongodb:27017/novu-db
       ME_CONFIG_BASICAUTH_ENABLED: "true"
@@ -182,20 +201,22 @@ services:
       - "127.0.0.1:8091:8081"      # localhost-only
     depends_on:
       - mhf-novu-mongodb
-    restart: unless-stopped
+    restart: "no"
     deploy:
       resources:
         limits:
+          cpus: '0.25'
           memory: 160M
 
   # 5.3 Redis for Novu
   mhf-novu-redis:
     image: redis:alpine
     container_name: mhf-novu-redis
-    restart: always
+    restart: "no"
     deploy:
       resources:
         limits:
+          cpus: '0.15'
           memory: 96M
 
   # 5.4 Novu API Service
@@ -219,10 +240,11 @@ services:
       - CORS_ALLOWED_ORIGINS=http://localhost:3001,http://localhost:3000,http://localhost:4200
       # Keep Node heap ~85% of the container limit.
       - NODE_OPTIONS=--max-old-space-size=384
-    restart: always
+    restart: "no"
     deploy:
       resources:
         limits:
+          cpus: '0.50'
           memory: 448M
 
   # 5.5 Novu Dashboard
@@ -234,10 +256,11 @@ services:
     environment:
       - REACT_APP_API_URL=http://localhost:3000
       - REACT_APP_WS_URL=http://localhost:3002
-    restart: always
+    restart: "no"
     deploy:
       resources:
         limits:
+          cpus: '0.25'
           memory: 128M
 
   # 5.6 Novu WebSocket Service
@@ -257,10 +280,11 @@ services:
       - SOCKET_IO_PROTOCOL_VERSION=4
       - CORS_ALLOWED_ORIGINS=http://localhost:3001,http://localhost:4200,http://localhost:3000,http://127.0.0.1:3001
       - NODE_OPTIONS=--max-old-space-size=200
-    restart: always
+    restart: "no"
     deploy:
       resources:
         limits:
+          cpus: '0.25'
           # Was 160M and sat at 98%; bumped for headroom against bursts.
           memory: 256M
 
@@ -280,22 +304,22 @@ services:
       - JWT_SECRET=mhf_dev_secret_123
       - STORE_ENCRYPTION_KEY=12345678901234567890123456789012
       - NODE_OPTIONS=--max-old-space-size=200
-    restart: always
+    restart: "no"
     deploy:
       resources:
         limits:
+          cpus: '0.25'
           # Was 160M and sat at 91%; sends admin email MFA — must not OOM.
           memory: 256M
-
 
   # ----------------------------------------------------
   # 6. MAILPIT — local SMTP catch-all for dev email testing
   # ----------------------------------------------------
-  # ----------------------------------------------------
-  # Replaces Ethereal guest inboxes, whose credentials rotate per session and force reconfiguring Novu daily.
-  # Mailpit catches all SMTP on 1025 and displays messages at http://localhost:8025 — no external service,
+  # Replaces Ethereal guest inboxes, whose credentials rotate per session
+  # and force reconfiguring Novu daily. Mailpit catches all SMTP on 1025
+  # and displays messages at http://localhost:8025 — no external service,
   # no credentials to manage, no send limits. Messages are held in memory
-  # and cleared on container restart (intentional; they're throwaway tests)
+  # and cleared on container restart (intentional; they're throwaway tests).
   mailpit:
     image: axllent/mailpit
     container_name: mhf-mailpit
@@ -307,10 +331,11 @@ services:
       MP_MAX_MESSAGES: 500               # cap in-memory message count
       MP_SMTP_AUTH_ACCEPT_ANY: 1         # accept any username/password (or none)
       MP_SMTP_AUTH_ALLOW_INSECURE: 1     # allow plain SMTP auth (local only)
-    restart: always
+    restart: "no"
     deploy:
       resources:
         limits:
+          cpus: '0.15'
           memory: 64M
 
 # ----------------------------------------------------
