@@ -1866,9 +1866,9 @@
   },
   "smtpServer": {},
   "loginTheme": "keycloak",
-  "accountTheme": "keycloak.v2",
-  "adminTheme": "keycloak.v2",
-  "emailTheme": "keycloak.v2",
+  "accountTheme": "keycloak",
+  "adminTheme": "keycloak",
+  "emailTheme": "keycloak",
   "eventsEnabled": true,
   "eventsExpiration": 1209600,
   "eventsListeners": [

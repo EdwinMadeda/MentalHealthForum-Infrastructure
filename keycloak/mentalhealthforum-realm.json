@@ -33,9 +33,9 @@
   "defaultLocale": "en",
 
   "loginTheme":   "keycloak",
-  "accountTheme": "keycloak.v3",
-  "adminTheme":   "keycloak.v3",
-  "emailTheme":   "keycloak.v3",
+  "accountTheme": "keycloak",
+  "adminTheme":   "keycloak",
+  "emailTheme":   "keycloak",
 
   "clients": [
     {
