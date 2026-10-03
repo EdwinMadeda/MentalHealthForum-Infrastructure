@@ -176,6 +176,8 @@ services:
     ports:
       - "127.0.0.1:27017:27017"    # localhost-only
     container_name: mhf-novu-mongodb
+    profiles:
+      - novu
     volumes:
       - ./databases/mhf-novu-mongodb:/data/db
     restart: "no"
@@ -191,7 +193,7 @@ services:
     image: mongo-express
     container_name: mhf-novu-mongo-express
     profiles:
-      - debug
+      - novu
     environment:
       ME_CONFIG_MONGODB_URL: mongodb://mhf-novu-mongodb:27017/novu-db
       ME_CONFIG_BASICAUTH_ENABLED: "true"
@@ -212,6 +214,8 @@ services:
   mhf-novu-redis:
     image: redis:alpine
     container_name: mhf-novu-redis
+    profiles:
+      - novu
     restart: "no"
     deploy:
       resources:
@@ -223,6 +227,8 @@ services:
   mhf-novu-api:
     image: ghcr.io/novuhq/novu/api:2.1.1
     container_name: mhf-novu-api
+    profiles:
+      - novu
     ports:
       - "3000:3000"
     dns:
@@ -251,6 +257,8 @@ services:
   mhf-novu-dashboard:
     image: ghcr.io/novuhq/novu/web:2.1.1
     container_name: mhf-novu-dashboard
+    profiles:
+      - novu
     ports:
       - "4200:4200"
     environment:
@@ -267,6 +275,8 @@ services:
   mhf-novu-ws:
     image: ghcr.io/novuhq/novu/ws:2.1.1
     container_name: mhf-novu-ws
+    profiles:
+      - novu
     ports:
       - "3002:3002"
     environment:
@@ -292,6 +302,8 @@ services:
   mhf-novu-worker:
     image: ghcr.io/novuhq/novu/worker:2.1.1
     container_name: mhf-novu-worker
+    profiles:
+      - novu
     dns:
       - 8.8.8.8
       - 1.1.1.1
@@ -323,6 +335,8 @@ services:
   mailpit:
     image: axllent/mailpit
     container_name: mhf-mailpit
+    profiles:
+      - novu
     ports:
       - "1025:1025"                # SMTP — point Novu/apps here
       - "8025:8025"                # Web UI — view caught emails
