@@ -35,6 +35,23 @@ CREATE INDEX IF NOT EXISTS idx_app_users_search ON app_users
     to_tsvector('public.simple_unaccent', COALESCE(bio, '')))
     );
 
+-- Full-text search
+CREATE INDEX idx_user_audit_log_search
+ON user_audit_log
+USING GIN (to_tsvector('public.simple_unaccent',
+	coalesce(custom_reason, '')
+));
+
+-- Trigram for fallback
+CREATE INDEX idx_user_audit_log_custom_reason_trgm
+ON user_audit_log
+USING GIN (public.unaccent_immutable(custom_reason) gin_trgm_ops);
+
+-- For reason definitions
+CREATE INDEX idx_reason_definitions_description_trgm
+ON user_audit_reason_definitions
+USING GIN (public.unaccent_immutable(description) gin_trgm_ops);
+
 -- This ensures only ONE row can ever have is_super_admin = TRUE
 CREATE UNIQUE INDEX idx_unique_super_admin ON app_users (is_super_admin) WHERE is_super_admin = TRUE;
 
