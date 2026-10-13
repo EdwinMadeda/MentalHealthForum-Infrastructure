@@ -494,12 +494,12 @@ $$ LANGUAGE plpgsql STABLE;
 -- --                           profile visibility, roles, groups (must be active).
 -- ---------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION profile_is_visible(
-    p_target_user_id UUID,
-    p_viewer_id UUID,
-    p_is_admin BOOLEAN,
-    p_is_moderator_or_admin BOOLEAN
-)
-RETURNS BOOLEAN AS $$
+	p_target_user_id uuid,
+	p_viewer_id uuid,
+	p_is_admin boolean,
+	p_is_moderator_or_admin boolean)
+    RETURNS boolean
+AS $$
 DECLARE
     v_visibility TEXT;
     v_target_roles TEXT[];
@@ -515,9 +515,15 @@ BEGIN
         RETURN TRUE;
     END IF;
 
-    -- Fetch the target user's profile visibility, roles, groups (must be active)
-    SELECT
-        profile_visibility,
+	-- Fetch target user's effective visibility, roles, groups (must be active)
+	SELECT
+		CASE
+			WHEN (roles && ARRAY['admin', 'moderator', 'super_admin'])
+				OR (groups && ARRAY['/administrators', '/moderators/professional',
+                                  '/moderators/peer', '/super_administrators'])
+		    THEN 'MEMBERS_ONLY'
+			ELSE profile_visibility
+		END,
         roles,
         groups
     INTO
@@ -535,7 +541,7 @@ BEGIN
 
     -- If target is Admin/moderator/superadmin visible to everyone (BELT 2 / SUSPENDERS - global override)
     -- UPDATED: Added /super_administrators to the groups check
-    IF (v_target_roles && ARRAY['admin', 'moderator'])
+    IF (v_target_roles && ARRAY['admin', 'moderator', 'super_admin'])
         OR (v_target_groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer', '/super_administrators']) THEN
         RETURN TRUE;
     END IF;
@@ -544,7 +550,7 @@ BEGIN
     RETURN COALESCE(
         (
             (v_visibility = 'MEMBERS_ONLY' AND p_viewer_id IS NOT NULL)
-                OR (v_visibility = 'CONNECTED_ONLY' AND p_viewer_id IS NOT NULL AND EXISTS (
+            OR (v_visibility = 'CONNECTED_ONLY' AND p_viewer_id IS NOT NULL AND EXISTS (
                 SELECT 1
                 FROM user_connections uc
                 WHERE uc.status = 'ACCEPTED'
@@ -553,24 +559,24 @@ BEGIN
                         OR (uc.user_1 = p_target_user_id AND uc.user_2 = p_viewer_id)
                     ))
                 )
-                OR (v_visibility = 'PRIVATE' AND (
-                -- Self already caught above, but keeping for completeness
+            OR (v_visibility = 'PRIVATE' AND (
+             -- Self already caught above, but keeping for completeness
                 p_target_user_id = p_viewer_id
-                    OR p_is_admin = TRUE
-                    OR p_is_moderator_or_admin = TRUE
-                    OR (v_target_roles && ARRAY['admin', 'moderator'])
-                    OR (v_target_groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer', '/super_administrators'])
-                    OR EXISTS (
+                OR p_is_admin = TRUE
+                OR p_is_moderator_or_admin = TRUE
+                OR (v_target_roles && ARRAY['admin', 'moderator', 'super_admin'])
+                -- UPDATED: Added /super_administrators here too
+                OR (v_target_groups && ARRAY['/administrators', '/moderators/professional', '/moderators/peer', '/super_administrators'])
+                OR EXISTS (
                     SELECT 1
                     FROM user_connections uc
                     WHERE uc.status = 'ACCEPTED'
                       AND (
                         (uc.user_1 = p_viewer_id AND uc.user_2 = p_target_user_id)
-                            OR (uc.user_1 = p_target_user_id AND uc.user_2 = p_viewer_id)
-                        ))
-                )
+                        OR (uc.user_1 = p_target_user_id AND uc.user_2 = p_viewer_id)
+                    ))
                 )
             )
-        , FALSE);
+        ), FALSE);
 END;
-$$ LANGUAGE plpgsql STABLE;
+$$ LANGUAGE plpgsql;
