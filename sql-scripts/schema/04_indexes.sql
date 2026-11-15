@@ -47,11 +47,6 @@ CREATE INDEX idx_user_audit_log_custom_reason_trgm
 ON user_audit_log
 USING GIN (public.unaccent_immutable(custom_reason) gin_trgm_ops);
 
--- For reason definitions
-CREATE INDEX idx_reason_definitions_description_trgm
-ON user_audit_reason_definitions
-USING GIN (public.unaccent_immutable(description) gin_trgm_ops);
-
 -- This ensures only ONE row can ever have is_super_admin = TRUE
 CREATE UNIQUE INDEX idx_unique_super_admin ON app_users (is_super_admin) WHERE is_super_admin = TRUE;
 
@@ -73,13 +68,6 @@ CREATE INDEX IF NOT EXISTS idx_tokens_lookup ON verification_tokens (token, emai
 -- ---------------------------------------------------------------------
 CREATE INDEX IF NOT EXISTS idx_otp_email_purpose ON otp_credentials (email, purpose);
 CREATE INDEX IF NOT EXISTS idx_otp_expiry ON otp_credentials (expiry_date);
-
--- ---------------------------------------------------------------------
--- user_audit_reason_definitions indexes
--- ---------------------------------------------------------------------
-CREATE INDEX idx_user_audit_reason_definitions_type ON user_audit_reason_definitions(action_type);
-CREATE INDEX idx_user_audit_reason_definitions_active ON user_audit_reason_definitions(is_active);
-CREATE INDEX idx_user_audit_reason_definitions_key ON user_audit_reason_definitions(key);
 
 -- ---------------------------------------------------------------------
 -- user_audit_log indexes

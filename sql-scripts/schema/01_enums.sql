@@ -20,6 +20,19 @@ DO $$ BEGIN
             'ADMIN_CORRECTION',
             'SYSTEM_AUTO',
 
+            -- INVITE-RELATED
+            'INVITE_EXPIRED',
+            'EMAIL_BOUNCED',
+            'USER_REQUEST_RESEND',
+            'ADMIN_CORRECTION_REISSUE',
+            'EMAIL_UPDATED',
+            'INVITE_CANCELLED',
+            'USER_REQUEST_REVOKE',
+            'DUPLICATE_INVITE',
+            'POLICY_VIOLATION_INVITE',
+            'ANONYMIZED_RETAINED',
+            'ADMIN_MANUAL_LOCK',
+
             -- PROMOTED additions
             'COMMUNITY_BUILDER',
             'MENTORSHIP',
@@ -27,6 +40,8 @@ DO $$ BEGIN
             'LEADERSHIP_QUALITIES',
             'PEER_SUPPORT_EXCELLENCE',
             'SAFETY_ADVOCATE',
+            'ADMIN_APPOINTMENT',
+            'ADMIN_PROMOTION',
 
             -- DEMOTED additions
             'CODE_OF_CONDUCT_VIOLATION',
@@ -41,7 +56,7 @@ DO $$ BEGIN
 
             -- ENABLED additions
             'SUSPENSION_LIFTED',
-            'APPEAL_APPROVED',
+            'ACTION_REVERSED',
             'USER_REQUEST_ENABLE',
             'READY_TO_RETURN',
 
@@ -49,6 +64,7 @@ DO $$ BEGIN
             'ROLE_REALIGNMENT',
             'SYSTEM_MIGRATION',
             'ERROR_CORRECTION',
+            'PENDING_TRACK_CHANGED',
 
             -- INVITE_REVOKED additions
             'USER_NO_LONGER_INTERESTED',
